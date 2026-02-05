@@ -1,7 +1,9 @@
 **SSH Credential Harvesting Investigation (Trojanized libssh)**
 **Overview**
 
-This project documents a hands-on forensic investigation into a compromised Linux server where SSH credentials were harvested using a malicious shared library (libssh.so).
+A hands-on Digital Forensics & Incident Response (DFIR) investigation of a compromised Linux host, performed entirely using native command-line tools (“living off the land”).  
+
+This project documents the discovery and reverse engineering of an SSH credential harvesting attack involving a trojanized `libssh.so`, including log analysis, malicious shared library identification, stack memory inspection, credential exfiltration tracing, and threat campaign attribution.
 
 The analysis covers:
 
@@ -58,7 +60,7 @@ These were noise and not part of the successful compromise.
 
 Valid logins were identified via:
 
-grep Accepted /var/log/auth.log*
+'grep Accepted /var/log/auth.log*'
 
 
 **Key result:**
@@ -72,19 +74,19 @@ This IP represents the attacker’s successful access.
 
 Running process inspection:
 
-lsof -p <sshd_pid>
+'lsof -p <sshd_pid>'
 
 
 Revealed:
 
-/usr/lib/libssh.so
+'/usr/lib/libssh.so'
 
 
 This library does not belong in the default OpenSSH execution path.
 
 Further confirmation:
 
-dpkg -V openssh-client
+'dpkg -V openssh-client'
 
 
 Returned verification failures on /usr/bin/ssh, confirming binary tampering.
@@ -93,12 +95,12 @@ Returned verification failures on /usr/bin/ssh, confirming binary tampering.
 
 The malicious shared object:
 
-/usr/lib/libssh.so
+'/usr/lib/libssh.so'
 
 
 MD5 extracted via:
 
-md5sum /usr/lib/libssh.so
+'md5sum /usr/lib/libssh.so'
 
 
 (Recorded separately in lab notes.)
@@ -107,13 +109,13 @@ md5sum /usr/lib/libssh.so
 
 Disassembly:
 
-objdump -d -M intel /usr/lib/libssh.so > libssh.asm
+'objdump -d -M intel /usr/lib/libssh.so > libssh.asm'
 
 
 Key exported functions discovered:
 
-send_credential
-send_credential_thread
+'send_credential'
+'send_credential_thread'
 
 
 These functions handle credential collection and transmission to attacker infrastructure.
@@ -122,7 +124,7 @@ These functions handle credential collection and transmission to attacker infras
 
 Inside send_credential_thread:
 
-sub rsp,0x850
+'sub rsp,0x850'
 
 Result:
 0x850 = 2128 bytes
@@ -165,44 +167,34 @@ Cambodia
 
 This was determined through infrastructure reuse analysis across multiple incidents.
 
-**Final Answers Summary**
-
-Item	Result
-
-Credential harvesting function	send_credential
-
-Stack allocation	2128 bytes
-
-Malicious library	/usr/lib/libssh.so
-
-Encoding method	XOR
-
-Victim country	Cambodia
-
 **Key Takeaways**
 
-Successful compromises can be hidden among brute-force noise
+Credential harvesting can be hidden behind legitimate binaries
 
-Shared library hijacking is an effective persistence technique
+Shared library hijacking is an effective persistence mechanism
 
-Reverse engineering is essential when logs alone are insufficient
+SSH brute-force noise can mask successful compromise
 
-Threat attribution often requires external intelligence correlation
+Reverse engineering is often required when logs alone are insufficient
 
-Stack analysis provides insight into attacker payload design
+Threat attribution frequently depends on infrastructure reuse
+
+Native Linux tools are sufficient for deep DFIR when used methodically
 
 **Skills Demonstrated**
 
-Linux DFIR
+Linux Incident Response
 
 SSH log analysis
 
-Malware reverse engineering
+Shared library hijacking detection
 
-Assembly inspection
+Malware reverse engineering (objdump / assembly)
 
-Stack memory analysis
+Stack memory inspection
 
-Threat hunting
+Credential exfiltration tracing
 
-Infrastructure attribution
+Threat hunting & attribution
+
+Living-off-the-land forensic techniques
