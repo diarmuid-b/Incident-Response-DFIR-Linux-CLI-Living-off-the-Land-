@@ -47,7 +47,8 @@ objdump, strings, grep, stat, md5sum
 Custom trojanized /usr/lib/libssh.so
 
 **Phase 1 — SSH Log Analysis**
-Failed Login Attempts
+
+**Failed Login Attempts**
 
 Multiple brute-force attempts were observed:
 
